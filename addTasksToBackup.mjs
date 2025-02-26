@@ -9,10 +9,6 @@ const backupFile = args[0];
 const sourceFile = args[1];
 const listName = args[2];
 
-//const backupFile = `./user.20250225T1642.json`;
-//const listName = `Ski`;
-//const sourceFile = `Ski.txt`;
-
 [backupFile, sourceFile].forEach(file => {
   if (!fs.existsSync(file)) {
     log(`File '${file}' not exist, program exit`);
@@ -21,15 +17,8 @@ const listName = args[2];
 });
 
 const findListId = (listName, backup) => {
-  const id = backup.data.caldavCalendars
+  return backup.data.caldavCalendars
     .find(list => list.name.toLowerCase() == listName.toLowerCase())?.uuid;
-  
-  if (id == null) {
-    log(`Task list with name '${listName}' not found in backup`);
-    process.exit(1);
-  }
-
-  return id;
 }
 
 const createTaskRow = title => (
@@ -56,11 +45,30 @@ const createTaskRow = title => (
   ]
 });
 
+const createListRow = name => (
+   {
+    account: "local",
+    uuid: generateId(),
+    name,
+    url: null,
+    icon: "list"
+   }
+);
+
 const backup = JSON.parse(fs.readFileSync(backupFile, "utf-8"));
 // log(backup.data.caldavCalendars);
 // log(backup.data.tasks[0]);
 
-const listId = findListId(listName, backup);
+let listId = findListId(listName, backup);
+// create list if not found by name
+if (listId == null) {
+  const listRow = createListRow(listName);
+  backup.data.caldavCalendars.push(listRow);
+  listId = listRow.uuid;
+  log(`list '${listName}' not found, create new one`);
+} else {
+  log(`list '${listName}' found, tasks will be added to the exisiting list`);
+}
  
 fs.readFileSync(sourceFile, "utf-8").split('\n').forEach(line => {
   const taskRow = createTaskRow(line);
