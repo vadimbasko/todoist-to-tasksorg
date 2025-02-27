@@ -3,7 +3,7 @@ import process from "node:process";
 const log = console.log;
 
 const obfuscatedBackupFile = "test-backup.json";
-const randomDataFile = "randomdata.csv";
+const randomDataFile = "fixtures/randomdata.csv";
 const excludeObfuscationNames = ["shopping", "errands"];
 
 const args = process.argv.slice(2);
@@ -14,7 +14,7 @@ if (!fs.existsSync(backupFile)) {
 }
 
 const randomData = fs.readFileSync(randomDataFile, "utf-8").replaceAll("\"", "").split("\n");
-const randomDataIterable = {
+const randomDataIterator = {
   current: 0,
   next() {
     if (this.current === randomData.length) {
@@ -57,7 +57,7 @@ function obfuscate(obj) {
     // except project names like 'Shopping' and 'Errands'
     if (key === 'name' || key === 'title') {
       if (!excludeObfuscationNames.includes(obj[key].toLowerCase())) {
-        const randomString = randomDataIterable.next().value;
+        const randomString = randomDataIterator.next().value;
         //log(`Replace '${obj[key]}' with '${randomString}' `);
         obj[key] = randomString;
       }
@@ -71,3 +71,4 @@ obfuscate(backup, randomData);
 
 const output = JSON.stringify(backup, null, " ");
 fs.writeFileSync(obfuscatedBackupFile, output);
+log(`obfuscated backup saved to '${obfuscatedBackupFile}'`);
